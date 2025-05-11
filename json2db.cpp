@@ -8,6 +8,7 @@
 struct Mapping {
     std::string source;
     std::string destination_table;
+    std::string id_expr;
 };
 
 class Mappings {
@@ -18,16 +19,17 @@ public:
         }
         for (const auto& mapping : jsonData["mappings"]) {
             std::cout << "Parsing mapping: " << mapping.dump() << std::endl;
-            
+
             Mapping m = Mapping {
                 mapping["source"].get<std::string>(),
-                mapping["destination_table"].get<std::string>()
+                mapping["destination_table"].get<std::string>(),
+                mapping["id_expr"].get<std::string>()
             };
-            
+
             if (m.source.empty() || m.destination_table.empty()) {
                 throw std::runtime_error("Invalid mapping data: source or destination_table is empty");
             }
-            
+
             _mappings.emplace_back(m);
         }
     }
@@ -91,7 +93,8 @@ public:
         for (const auto& mapping : _mappings) {
             std::cout << "Processing mapping " << ++mappingIndex << " of " << _mappings.size() << std::endl
                       << "Loading data from " << mapping.source
-                      << " into table " << mapping.destination_table << std::endl;
+                      << " into table " << mapping.destination_table
+                      << " id expression " << mapping.id_expr << std::endl;
 
             std::filesystem::path sourcePath = mapping.source;
 
@@ -106,12 +109,12 @@ public:
                 for (const auto& entry : std::filesystem::directory_iterator(sourcePath)) {
                     if (std::filesystem::is_regular_file(entry)) {
                         std::cout << "Processing file " << ++fileIndex << " of " << fileCount << ": " << entry.path().filename().string() << std::endl;
-                        loadFile(entry);
+                        loadFile(entry, mapping);
                     }
                 }
                 processedFilesCount += fileCount;
             } else if (std::filesystem::is_regular_file(sourcePath)) {
-                loadFile(sourcePath);
+                loadFile(sourcePath, mapping);
                 processedFilesCount++;
             } else {
                 throw std::runtime_error("Unknown file system object type: " + sourcePath.string());
@@ -122,11 +125,12 @@ public:
     }
 
 protected:
-    void loadFile(const std::filesystem::path& filePath) {
-        std::cout << "Loading file: " << filePath.filename().string() << std::endl;
+    void loadFile(const std::filesystem::path& filePath, const Mapping& mapping) {
+        std::cout << "Loading file: " << filePath.filename().string() << " for mapping: " << mapping.destination_table << std::endl;
         if (filePath.extension() != ".json") {
             std::cerr << "Warning: The file " << filePath.filename().string() 
-                      << " does not have a .json extension. Will try to process it anyways..." << std::endl;
+                      << " does not have a .json extension. Skipping it..." << std::endl;
+            return;
         }
         std::ifstream file(filePath);
         if (!file.is_open()) {
@@ -137,23 +141,54 @@ protected:
         file >> jsonData;
 
         if (jsonData.is_object()) {
-            saveData(jsonData);
+            saveData(filePath, mapping, jsonData);
         } else if (jsonData.is_array()) {
             int elementCount = jsonData.size();
-            std::cout << "Parsed JSON array with " << elementCount<< " elements:" << std::endl;
+            std::cout << "Parsed JSON array with " << elementCount << " elements:" << std::endl;
             int elementIndex = 0;
             for (const auto& element : jsonData) {
                 std::cout << "Processing element " << ++elementIndex << " of " << elementCount << std::endl;
-                saveData(element);
+                saveData(filePath, mapping, element);
             }
         } else {
             throw std::runtime_error("Invalid JSON data: Expected object or array in file: " + filePath.string());
         }
     }
 
-    void saveData(const nlohmann::json& jsonData) {
-        std::cout << "Saving data to the database..." << std::endl;
-        std::cout << jsonData.dump(4) << std::endl;
+    std::string generateId(const std::string& idExpr, const std::filesystem::path& filePath, const nlohmann::json& jsonData) {
+        std::string id = idExpr;
+        size_t startPos = 0;
+
+        while ((startPos = id.find("${", startPos)) != std::string::npos) {
+            size_t endPos = id.find("}", startPos);
+
+            if (endPos == std::string::npos) {
+                throw std::runtime_error("Invalid id expression: missing closing '}' in " + idExpr);
+            }
+
+            std::string key = id.substr(startPos + 2, endPos - startPos - 2);
+
+            if (jsonData.contains(key)) {
+                if (!jsonData[key].is_string() && !jsonData[key].is_number_integer()) {
+                    throw std::runtime_error("Invalid value type for key '" + key + "' in JSON data. Expected string or integer.");
+                }
+                std::string value = jsonData[key].is_string() ? jsonData[key].get<std::string>() : std::to_string(jsonData[key].get<long>());
+                id.replace(startPos, endPos - startPos + 1, value);
+                startPos += value.length();
+            } else {
+                throw std::runtime_error("Key '" + key + "' not found in JSON data for id expression: " + idExpr);
+            }
+        }
+
+        return id;
+    }
+
+    void saveData(const std::filesystem::path& filePath, const Mapping& mapping, const nlohmann::json& jsonData) {
+        std::cout << "Saving data from file: " << filePath.filename().string() << " to table: " << mapping.destination_table << std::endl;
+        std::string id = generateId(mapping.id_expr, filePath, jsonData);
+        std::cout << "Generated ID: " << id << std::endl;
+        std::cout << "Data: " << jsonData.dump(4) << std::endl;
+        // Placeholder for actual database saving logic
     }
 
 private:

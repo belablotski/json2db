@@ -2,11 +2,13 @@
     "mappings": [
         {
             "source": "./tests/objects",
-            "destination_table": "objects"
+            "destination_table": "objects",
+            "id_expr": "${id}"
         },
         {
             "source": "./tests/arrays",
-            "destination_table": "arrays"
+            "destination_table": "arrays",
+            "id_expr": "${name}-${id}"
         }
     ]
 }
