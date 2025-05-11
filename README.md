@@ -67,3 +67,4 @@ Sample `json2db.json`:
 
 ## TODO
 1. Besides of object ID, add hash, load session id, created_at/updated_at/deleted_at timestamps.
+2. Data load strategy: insert or upsert.

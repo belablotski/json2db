@@ -1,0 +1,92 @@
+[
+    {
+        "id": 1,
+        "name": "Barbara Wilson",
+        "gender": "Female",
+        "age": 37,
+        "profession": "Geophysicist/field seismologist",
+        "occupation": "Greene, Davis and Dunn",
+        "hobby": "evening"
+    },
+    {
+        "id": 2,
+        "name": "Stacy Garcia",
+        "gender": "Female",
+        "age": 50,
+        "profession": "Community development worker",
+        "occupation": "Brock-Riley",
+        "hobby": "deal"
+    },
+    {
+        "id": 3,
+        "name": "Mrs. Carolyn Marquez DDS",
+        "gender": "Female",
+        "age": 30,
+        "profession": "Science writer",
+        "occupation": "Curry-Martin",
+        "hobby": "go"
+    },
+    {
+        "id": 4,
+        "name": "Edgar Meadows",
+        "gender": "Male",
+        "age": 46,
+        "profession": "Physiological scientist",
+        "occupation": "Graves-Peck",
+        "hobby": "plant"
+    },
+    {
+        "id": 5,
+        "name": "Patrick Taylor",
+        "gender": "Male",
+        "age": 33,
+        "profession": "Banker",
+        "occupation": "Watson Inc",
+        "hobby": "challenge"
+    },
+    {
+        "id": 6,
+        "name": "Kimberly Jones",
+        "gender": "Female",
+        "age": 55,
+        "profession": "Librarian, public",
+        "occupation": "Arnold-Brown",
+        "hobby": "hotel"
+    },
+    {
+        "id": 7,
+        "name": "Johnny Wood",
+        "gender": "Male",
+        "age": 61,
+        "profession": "Producer, radio",
+        "occupation": "Alexander, Barber and Soto",
+        "hobby": "politics"
+    },
+    {
+        "id": 8,
+        "name": "Michael Alvarez",
+        "gender": "Male",
+        "age": 43,
+        "profession": "Engineer, production",
+        "occupation": "Douglas, Barrett and Paul",
+        "hobby": "contain"
+    },
+    {
+        "id": 9,
+        "name": "Sandra Estrada",
+        "gender": "Female",
+        "age": 36,
+        "profession": "Merchant navy officer",
+        "occupation": "Henderson, King and Contreras",
+        "hobby": "at"
+    },
+    {
+        "id": 10,
+        "name": "Debra Rogers",
+        "gender": "Female",
+        "age": 49,
+        "profession": "Scientist, marine",
+        "occupation": "Brown, Curry and Hopkins",
+        "hobby": "little"
+    }
+]

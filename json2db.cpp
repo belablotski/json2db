@@ -68,12 +68,32 @@ class Loader {
 public:
     explicit Loader(const std::vector<Mapping>& mappings) : _mappings(mappings) {}
 
-    void load() {
-        for (const auto& mapping : _mappings) {
-            std::filesystem::path sourcePath = mapping.source;
+    /**
+     * @brief Loads data from the specified mappings into the database.
+     * 
+     * This function iterates over the provided mappings, processes the source paths,
+     * and loads the data into the corresponding database tables. It supports both
+     * directories and individual files as source paths. If the source path is a directory,
+     * all regular files within the directory are processed. If the source path is a single
+     * file, only that file is processed.
+     * 
+     * @return int The number of processed files.
+     * 
+     * @throws std::runtime_error If the source path does not exist, is of an unknown type,
+     *                            or if there is an error opening or processing a file.
+     */
+    int load() {
+        std::cout << "Starting data loading process for " << _mappings.size() << " mappings." << std::endl;
 
-            std::cout << "Loading data from " << mapping.source
+        int mappingIndex = 0;
+        int processedFilesCount = 0;
+
+        for (const auto& mapping : _mappings) {
+            std::cout << "Processing mapping " << ++mappingIndex << " of " << _mappings.size() << std::endl
+                      << "Loading data from " << mapping.source
                       << " into table " << mapping.destination_table << std::endl;
+
+            std::filesystem::path sourcePath = mapping.source;
 
             if (!std::filesystem::exists(sourcePath)) {
                 throw std::runtime_error("Source path does not exist: " + sourcePath.string());
@@ -89,12 +109,16 @@ public:
                         loadFile(entry);
                     }
                 }
+                processedFilesCount += fileCount;
             } else if (std::filesystem::is_regular_file(sourcePath)) {
                 loadFile(sourcePath);
+                processedFilesCount++;
             } else {
                 throw std::runtime_error("Unknown file system object type: " + sourcePath.string());
             }
         }
+
+        return processedFilesCount;
     }
 
 protected:
@@ -102,9 +126,34 @@ protected:
         std::cout << "Loading file: " << filePath.filename().string() << std::endl;
         if (filePath.extension() != ".json") {
             std::cerr << "Warning: The file " << filePath.filename().string() 
-                      << " does not have a .json extension. Skipping this file." << std::endl;
-            return;
+                      << " does not have a .json extension. Will try to process it anyways..." << std::endl;
         }
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            throw std::runtime_error("Unable to open file: " + filePath.string());
+        }
+
+        nlohmann::json jsonData;
+        file >> jsonData;
+
+        if (jsonData.is_object()) {
+            saveData(jsonData);
+        } else if (jsonData.is_array()) {
+            int elementCount = jsonData.size();
+            std::cout << "Parsed JSON array with " << elementCount<< " elements:" << std::endl;
+            int elementIndex = 0;
+            for (const auto& element : jsonData) {
+                std::cout << "Processing element " << ++elementIndex << " of " << elementCount << std::endl;
+                saveData(element);
+            }
+        } else {
+            throw std::runtime_error("Invalid JSON data: Expected object or array in file: " + filePath.string());
+        }
+    }
+
+    void saveData(const nlohmann::json& jsonData) {
+        std::cout << "Saving data to the database..." << std::endl;
+        std::cout << jsonData.dump(4) << std::endl;
     }
 
 private:
@@ -131,7 +180,8 @@ int main(int argc, char* argv[]) {
         Mappings mappings(jsonData);
 
         Loader loader(mappings.getMappings());
-        loader.load();
+        int fileCount = loader.load();
+        std::cout << "Total files processed: " << fileCount << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
