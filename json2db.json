@@ -1,0 +1,12 @@
+{
+    "mappings": [
+        {
+            "source": "./tests/objects",
+            "destination_table": "objects"
+        },
+        {
+            "source": "./tests/arrays",
+            "destination_table": "arrays"
+        }
+    ]
+}

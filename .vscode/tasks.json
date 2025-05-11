@@ -1,0 +1,43 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "build json2db",
+			"command": "/usr/bin/g++",
+			"args": [
+				"-g",
+				"${workspaceFolder}/json2db.cpp",
+				"-o",
+				"${workspaceFolder}/json2db"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"detail": "Generated task by Debugger."
+		},
+		{
+			"label": "run json2db",
+			"dependsOn": "build json2db",
+			"presentation": {
+				"reveal": "always",
+				"focus": true,
+				"echo": true,
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"type": "shell",
+			"command": "./json2db json2db.json",
+			"args": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		}
+	]
+}
