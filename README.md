@@ -68,3 +68,4 @@ Sample `json2db.json`:
 ## TODO
 1. Besides of object ID, add hash, load session id, created_at/updated_at/deleted_at timestamps.
 2. Data load strategy: insert or upsert.
+3. Implement more EL substitutions in id generation, like ${__dirName}, ${__fileName}, ${__UUID}, etc.

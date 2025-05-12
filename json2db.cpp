@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>    // sudo apt-get install nlohmann-json3-dev
 #include <string>
 #include <vector>
+#include <pqxx/pqxx> // sudo apt-get install libpqxx-dev
 
 struct Mapping {
     std::string source;
@@ -64,6 +65,32 @@ public:
 
 private:
     std::string _filePath;
+};
+
+class Session {
+public:
+    explicit Session(const std::string& connectionString)
+        : _connection(connectionString) {
+        std::cout << "Connected to PostgreSQL database." << std::endl;
+    }
+
+    ~Session() {
+        std::cout << "Closing PostgreSQL connection." << std::endl;
+    }
+
+    pqxx::result executeQuery(const std::string& query) {
+        try {
+            pqxx::work transaction(_connection);
+            pqxx::result result = transaction.exec(query);
+            transaction.commit();
+            return result;
+        } catch (const std::exception& e) {
+            throw std::runtime_error("Database query failed: " + std::string(e.what()));
+        }
+    }
+
+private:
+    pqxx::connection _connection;
 };
 
 class Loader {
