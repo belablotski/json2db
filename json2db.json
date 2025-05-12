@@ -1,16 +1,18 @@
 {
     "mappings": [
         {
+            "description": "Load individual objects from a JSON files into a PostgreSQL table. Each file contains a single object.",
             "source": "./tests/objects",
             "destination_table": "objects",
             "id_expr": "${id}",
-            "connection": "dbname=postgres user=postgres password=test_password host=localhost port=5432"
+            "connection": "dbname=postgres user=test_user password=test_password host=localhost port=5432"
         },
         {
+            "description": "Load objects from a JSON files into a PostgreSQL table. Each file contains an array of objects.",
             "source": "./tests/arrays",
             "destination_table": "arrays",
             "id_expr": "${name}-${id}",
-            "connection": "dbname=postgres user=postgres password=test_password host=localhost port=5432"
+            "connection": "dbname=postgres user=test_user password=test_password host=localhost port=5432"
         }
     ]
 }

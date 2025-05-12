@@ -9,6 +9,7 @@
 #include <memory>
 
 struct Mapping {
+    std::string description;
     std::string source;
     std::string destination_table;
     std::string id_expr;
@@ -25,6 +26,7 @@ public:
             std::cout << "Parsing mapping: " << mapping.dump() << std::endl;
 
             Mapping m = Mapping {
+                mapping.contains("description") ? mapping["description"].get<std::string>() : "",
                 mapping["source"].get<std::string>(),
                 mapping["destination_table"].get<std::string>(),
                 mapping["id_expr"].get<std::string>(),
@@ -80,7 +82,7 @@ public:
 
     ~Session() {
         std::cout << "Closing PostgreSQL connection." << std::endl;
-        //// _connection.disconnect();
+        _connection.disconnect();
     }
 
     pqxx::result executeQuery(const std::string& query) {
@@ -145,10 +147,11 @@ public:
         int processedFilesCount = 0;
 
         for (const auto& mapping : _mappings) {
-            std::cout << "Processing mapping " << ++mappingIndex << " of " << _mappings.size() << std::endl
-                      << "Loading data from " << mapping.source
-                      << " into table " << mapping.destination_table
-                      << " id expression " << mapping.id_expr << std::endl;
+            std::cout << "*** Processing mapping " << ++mappingIndex << " of " << _mappings.size() << std::endl
+                      << "Description: " << mapping.description << std::endl
+                      << "Loading data from '" << mapping.source
+                      << "' into table '" << mapping.destination_table << "' in '" << mapping.connection
+                      << "' with id expression '" << mapping.id_expr << "'" << std::endl;
 
             std::filesystem::path sourcePath = mapping.source;
 
@@ -255,6 +258,7 @@ protected:
                             " (id, data, hash, load_id, created_at, updated_at) VALUES ('" + 
                             id + "', '" + jsonData.dump() + "', '" + hash + "', '" + load_id + "', " + created_at + ", " + updated_at + ")";
         session->executeQuery(query);
+        std::cout << "Data saved successfully to table: " << mapping.destination_table << std::endl;
     }
 
 private:
