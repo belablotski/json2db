@@ -140,8 +140,11 @@ public:
      * @throws std::runtime_error If the source path does not exist, is of an unknown type,
      *                            or if there is an error opening or processing a file.
      */
-    int load() {
-        std::cout << "Starting data loading process for " << _mappings.size() << " mappings." << std::endl;
+    int load(const std::string& loadId) {
+        std::cout << "Starting data loading process " << loadId << " for " << _mappings.size() << " mappings." << std::endl;
+
+        // TODO: this makes it not thread safe.
+        _loadId = loadId;
 
         int mappingIndex = 0;
         int processedFilesCount = 0;
@@ -246,17 +249,25 @@ protected:
         std::cout << "Generated ID: " << id << std::endl;
         std::cout << "Data: " << jsonData.dump(4) << std::endl;
 
-        // Generate additional fields
-        std::string hash = "hash_placeholder"; // Replace with actual hash generation logic
-        std::string load_id = "load_id_placeholder"; // Replace with actual load ID logic
-        std::string created_at = "NOW()"; // Use current timestamp
-        std::string updated_at = "NOW()"; // Use current timestamp
+        std::string jsonStr = jsonData.dump();
 
-        // Get session and execute query
+        std::string hash = std::to_string(std::hash<std::string>{}(jsonStr));
+        std::string load_id = _loadId;
+        std::string created_at = "NOW()";
+        std::string updated_at = "NOW()";
+
         std::shared_ptr<Session> session = _connectionFactory.getSession(mapping.connection);
+        
+        size_t pos = 0;
+        while ((pos = jsonStr.find("'", pos)) != std::string::npos) {
+            jsonStr.replace(pos, 1, "''");
+            pos += 2;
+        }
+        
+        // TODO: Use prepared statements to prevent SQL injection
         std::string query = "INSERT INTO " + mapping.destination_table + 
                             " (id, data, hash, load_id, created_at, updated_at) VALUES ('" + 
-                            id + "', '" + jsonData.dump() + "', '" + hash + "', '" + load_id + "', " + created_at + ", " + updated_at + ")";
+                            id + "', '" + jsonStr + "', '" + hash + "', '" + load_id + "', " + created_at + ", " + updated_at + ")";
         session->executeQuery(query);
         std::cout << "Data saved successfully to table: " << mapping.destination_table << std::endl;
     }
@@ -264,15 +275,17 @@ protected:
 private:
     std::vector<Mapping> _mappings;
     ConnectionFactory& _connectionFactory;
+    std::string _loadId;
 };
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <mapping_file_path>" << std::endl;
+    if (argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " <mapping_file_path> <load id>" << std::endl;
         return 1;
     }
 
     std::filesystem::path mappingFilePath = argv[1];
+    std::string loadId = argv[2];
 
     if (!std::filesystem::exists(mappingFilePath)) {
         std::cerr << "Error: The specified mapping file does not exist." << std::endl;
@@ -280,6 +293,7 @@ int main(int argc, char* argv[]) {
     }
 
     try {
+        std::cout << "Starting load session " << loadId << "..." << std::endl;
         MappingParser parser(mappingFilePath.string());
         nlohmann::json jsonData = parser.parse();
 
@@ -287,10 +301,10 @@ int main(int argc, char* argv[]) {
 
         ConnectionFactory connectionFactory;
         Loader loader(mappings.getMappings(), connectionFactory);
-        int fileCount = loader.load();
-        std::cout << "Total files processed: " << fileCount << std::endl;
+        int fileCount = loader.load(loadId);
+        std::cout << "Total files processed in load session " << loadId << ": " << fileCount << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Error in load session " << loadId << ": " << e.what() << std::endl;
         return 1;
     }
 

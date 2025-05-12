@@ -33,7 +33,7 @@
 				"clear": false
 			},
 			"type": "shell",
-			"command": "./json2db json2db-with_passwords.json",
+			"command": "./json2db json2db-with_passwords.json 20250512-1346",
 			"args": [],
 			"group": {
 				"kind": "build",
