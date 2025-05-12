@@ -9,7 +9,9 @@
 				"-g",
 				"${workspaceFolder}/json2db.cpp",
 				"-o",
-				"${workspaceFolder}/json2db"
+				"${workspaceFolder}/json2db",
+				"-lpqxx",
+				"-lpq"
 			],
 			"group": {
 				"kind": "build",

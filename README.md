@@ -48,24 +48,9 @@ The configuration file should define mappings in the following format:
 }
 ```
 
-## Example
-Sample `json2db.json`:
-```json
-{
-    "mappings": [
-        {
-            "source": "./tests/objects",
-            "destination_table": "objects"
-        },
-        {
-            "source": "./tests/arrays",
-            "destination_table": "arrays"
-        }
-    ]
-}
-```
-
 ## TODO
 1. Besides of object ID, add hash, load session id, created_at/updated_at/deleted_at timestamps.
 2. Data load strategy: insert or upsert.
 3. Implement more EL substitutions in id generation, like ${__dirName}, ${__fileName}, ${__UUID}, etc.
+4. Generalize Session class from PostgreSQL to arbitrary DB.
+5. Password management for DB connections.

@@ -4,12 +4,15 @@
 #include <nlohmann/json.hpp>    // sudo apt-get install nlohmann-json3-dev
 #include <string>
 #include <vector>
-#include <pqxx/pqxx> // sudo apt-get install libpqxx-dev
+#include <pqxx/pqxx>            // sudo apt-get install libpqxx-dev
+#include <unordered_map>
+#include <memory>
 
 struct Mapping {
     std::string source;
     std::string destination_table;
     std::string id_expr;
+    std::string connection;
 };
 
 class Mappings {
@@ -24,7 +27,8 @@ public:
             Mapping m = Mapping {
                 mapping["source"].get<std::string>(),
                 mapping["destination_table"].get<std::string>(),
-                mapping["id_expr"].get<std::string>()
+                mapping["id_expr"].get<std::string>(),
+                mapping["connection"].get<std::string>()
             };
 
             if (m.source.empty() || m.destination_table.empty()) {
@@ -38,7 +42,7 @@ public:
     const std::vector<Mapping>& getMappings() const {
         return _mappings;
     }
-
+    
 private:
     std::vector<Mapping> _mappings;
 };
@@ -71,11 +75,12 @@ class Session {
 public:
     explicit Session(const std::string& connectionString)
         : _connection(connectionString) {
-        std::cout << "Connected to PostgreSQL database." << std::endl;
+        std::cout << "Connected to PostgreSQL database " << connectionString << std::endl;
     }
 
     ~Session() {
         std::cout << "Closing PostgreSQL connection." << std::endl;
+        //// _connection.disconnect();
     }
 
     pqxx::result executeQuery(const std::string& query) {
@@ -93,9 +98,31 @@ private:
     pqxx::connection _connection;
 };
 
+class ConnectionFactory {
+public:
+    explicit ConnectionFactory() : _sessionCache() {}
+
+    std::shared_ptr<Session> getSession(const std::string& connectionString) {
+        auto it = _sessionCache.find(connectionString);
+        if (it != _sessionCache.end()) {
+            std::cout << "Reusing existing session for connection string: " << connectionString << std::endl;
+            return it->second;
+        }
+
+        std::cout << "Creating new session for connection string: " << connectionString << std::endl;
+        auto session = std::make_shared<Session>(connectionString);
+        _sessionCache[connectionString] = session;
+        return session;
+    }
+
+private:
+    std::unordered_map<std::string, std::shared_ptr<Session>> _sessionCache;
+};
+
 class Loader {
 public:
-    explicit Loader(const std::vector<Mapping>& mappings) : _mappings(mappings) {}
+    explicit Loader(const std::vector<Mapping>& mappings, ConnectionFactory& connectionFactory)
+        : _mappings(mappings), _connectionFactory(connectionFactory) {}
 
     /**
      * @brief Loads data from the specified mappings into the database.
@@ -215,11 +242,24 @@ protected:
         std::string id = generateId(mapping.id_expr, filePath, jsonData);
         std::cout << "Generated ID: " << id << std::endl;
         std::cout << "Data: " << jsonData.dump(4) << std::endl;
-        // Placeholder for actual database saving logic
+
+        // Generate additional fields
+        std::string hash = "hash_placeholder"; // Replace with actual hash generation logic
+        std::string load_id = "load_id_placeholder"; // Replace with actual load ID logic
+        std::string created_at = "NOW()"; // Use current timestamp
+        std::string updated_at = "NOW()"; // Use current timestamp
+
+        // Get session and execute query
+        std::shared_ptr<Session> session = _connectionFactory.getSession(mapping.connection);
+        std::string query = "INSERT INTO " + mapping.destination_table + 
+                            " (id, data, hash, load_id, created_at, updated_at) VALUES ('" + 
+                            id + "', '" + jsonData.dump() + "', '" + hash + "', '" + load_id + "', " + created_at + ", " + updated_at + ")";
+        session->executeQuery(query);
     }
 
 private:
     std::vector<Mapping> _mappings;
+    ConnectionFactory& _connectionFactory;
 };
 
 int main(int argc, char* argv[]) {
@@ -241,7 +281,8 @@ int main(int argc, char* argv[]) {
 
         Mappings mappings(jsonData);
 
-        Loader loader(mappings.getMappings());
+        ConnectionFactory connectionFactory;
+        Loader loader(mappings.getMappings(), connectionFactory);
         int fileCount = loader.load();
         std::cout << "Total files processed: " << fileCount << std::endl;
     } catch (const std::exception& e) {
