@@ -53,5 +53,5 @@ The configuration file should define mappings in the following format:
 2. Data load strategy: insert or upsert.
 3. Implement more EL substitutions in id generation, like ${__dirName}, ${__fileName}, ${__UUID}, etc.
 4. Generalize Session class from PostgreSQL to arbitrary DB.
-5. Password management for DB connections.
+5. Password management for DB connections (externalize password from config file - allow to use ${password1} placeholders and pass passwords via command line or environment variables).
 6. Use prepared statements to prevent SQL injection.
