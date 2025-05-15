@@ -1,7 +1,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
-#include <nlohmann/json.hpp>    // sudo apt-get install nlohmann-json3-dev
+#include <nlohmann/json.hpp>    // sudo apt-get install nlohmann-json3-dev OR brew install nlohmann-json
 #include <string>
 #include <vector>
 #include <pqxx/pqxx>            // sudo apt-get install libpqxx-dev
@@ -82,7 +82,8 @@ public:
 
     ~Session() {
         std::cout << "Closing PostgreSQL connection." << std::endl;
-        _connection.disconnect();
+        // TODO: Close the connection properly
+        // _connection.disconnect();
     }
 
     pqxx::result executeQuery(const std::string& query) {
