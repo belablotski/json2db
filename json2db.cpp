@@ -198,6 +198,12 @@ protected:
             throw std::runtime_error("Unable to open file: " + filePath.string());
         }
 
+        if (file.peek() == std::ifstream::traits_type::eof()) {
+            // TODO: it might worth to add some kind of policy to handle empty files: skip, throw, insert empty doc.
+            std:: cerr << "WARNING: The file is empty: " + filePath.string() << " Skipping it..." << std::endl;
+            return;
+        }
+
         nlohmann::json jsonData;
         file >> jsonData;
 
