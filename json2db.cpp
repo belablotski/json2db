@@ -248,7 +248,8 @@ protected:
         std::cout << "Saving data from file: " << filePath.filename().string() << " to table: " << mapping.destination_table << std::endl;
         std::string id = generateId(mapping.id_expr, filePath, jsonData);
         std::cout << "Generated ID: " << id << std::endl;
-        std::cout << "Data: " << jsonData.dump(4) << std::endl;
+        std::string jsonTxt = jsonData.dump(4);
+        std::cout << "Data: " << jsonTxt.substr(0, 200) << (jsonTxt.size() > 200 ? "..." : "") << std::endl;
 
         std::string jsonStr = jsonData.dump();
 
@@ -268,9 +269,18 @@ protected:
         // TODO: Use prepared statements to prevent SQL injection
         std::string query = "INSERT INTO " + mapping.destination_table + 
                             " (id, data, hash, load_id, created_at, updated_at) VALUES ('" + 
-                            id + "', '" + jsonStr + "', '" + hash + "', '" + load_id + "', " + created_at + ", " + updated_at + ")";
-        session->executeQuery(query);
-        std::cout << "Data saved successfully to table: " << mapping.destination_table << std::endl;
+                            id + "', '" + jsonStr + "', '" + hash + "', '" + load_id + "', " + created_at + ", " + updated_at + ") " +
+                            "ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, hash = EXCLUDED.hash, updated_at = " + updated_at +
+                            ", load_id = EXCLUDED.load_id RETURNING (xmax = 0) AS inserted";
+        pqxx::result res = session->executeQuery(query);
+
+        if (!res.empty() && res.columns() > 0) {
+            std::cout << "Data successfully " << (res[0]["inserted"].as<bool>() ? "INSERTED into" : "UPDATED in") 
+                      << " table: " << mapping.destination_table << " with id: " << id << std::endl;
+        }
+        else {
+            throw std::runtime_error("No changes made to table: " + mapping.destination_table + " for id: " + id);
+        }
     }
 
 private:
