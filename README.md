@@ -55,3 +55,6 @@ The configuration file should define mappings in the following format:
 4. Generalize Session class from PostgreSQL to arbitrary DB.
 5. Password management for DB connections (externalize password from config file - allow to use ${password1} placeholders and pass passwords via command line or environment variables).
 6. Use prepared statements to prevent SQL injection.
+
+## See also
+1. [My First Steps into Agentic Coding with VS Code](https://belablotski.github.io/engineering/ai/agentic_coding/first_steps/)
